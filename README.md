@@ -25,8 +25,8 @@ The web application is developed using Flask, chosen for its simplicity and ligh
 ### Login: 
 - Static user credentials (user: user, password: 1234) to access the application.
 ### Homepage:
-- Displays a <table> with all Starship data initially.
-- Includes a dropdown (<select>) for Starship manufacturers to filter the data.
+- Displays a table with all Starship data initially.
+- Includes a dropdown for Starship manufacturers to filter the data.
 - When a manufacturer is selected, the table is dynamically updated to display only matching results.
 - Refresh Button: A button allows authenticated users to refresh the data by fetching the latest information from the Star Wars API and updating the local CSV.
 - Logout Button: Logs the user out, clearing their session.
