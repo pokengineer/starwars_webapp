@@ -2,18 +2,66 @@ from flask import Flask, render_template, request, redirect, url_for, session
 import pandas as pd
 import requests
 from ratelimiter import RateLimiter
+from sqlalchemy import create_engine, text
+from dotenv import load_dotenv
+import os
 import re
 
 app = Flask(__name__)
 app.secret_key = "secretkey"  # Used for session management
 
+load_dotenv()
+params = os.environ
+
 # Static credentials
-USERNAME = "user"
-PASSWORD = "1234"
+USERNAME = params['APP_USR'] #"user"
+PASSWORD = params['APP_PSW'] #"1234"
 
 @RateLimiter(max_calls=400, period=3600)
 def request_get( url ):
     return requests.get(url)
+
+class dabase_connector:
+    def __init__(self, ):
+        self.engine = create_engine("postgresql+psycopg2://"+ params['DB_USER'] +":"+ params['DB_PASS']+ "@localhost:5432/test_db")
+
+    def get_df( self, ):
+        try:
+            df = pd.read_sql_query('select * from starships',con=self.engine)
+        except:
+            api_conn = api_connector()
+            df = api_conn.refresh_table()
+            df.to_sql('starships', self.engine , if_exists='replace', index=False)
+        return df
+
+    def set_df( self, df ):
+        df.to_sql('starships', self.engine , if_exists='replace', index=False)
+
+class api_connector:
+    def __init__(self, ):
+        self.url = "https://www.swapi.tech/api/starships/"
+
+    def refresh_table( self, ):
+        try:
+            starships = []
+            while self.url:
+                r = request_get( self.url )
+                response = r.json()
+                starships.extend(response['results'])
+                self.url = response['next']
+            starship_details = []
+            for s in starships:
+                r = request_get( s['url'] )
+                response = r.json()
+                starship_details.append(response['result']['properties'])
+            df = pd.DataFrame(starship_details)
+            df.to_csv('data/starships.csv', index=False)
+            db_conn = dabase_connector()
+            db_conn.set_df( df )
+            return df
+        except Exception as e:
+            return f"Error refreshing CSV: {str(e)}", 500
+
 
 
 @app.route('/')
@@ -43,9 +91,8 @@ def homepage():
     # Check if user is logged in
     if "logged_in" in session and session["logged_in"]:
         try:
-            # Load data, using read_csv.
-            # on a real app here is where we would connect with a database
-            df = pd.read_csv('data/starships.csv')
+            db_conn = dabase_connector()
+            df = db_conn.get_df()
 
             # get list of possible manufacturers
             manufacturers = sorted( list(set( re.split('\. |, |/', ', '.join([man.replace('.','').replace('Incorporated','Inc') for man in df['manufacturer'].to_list()] ) ) )) )
@@ -69,24 +116,9 @@ def homepage():
 
 @app.route('/refresh_data', methods=['POST'])
 def refresh_data():
-    try:
-        url = "https://www.swapi.tech/api/starships/"
-        starships = []
-        while url:
-            r = request_get( url )
-            response = r.json()
-            starships.extend(response['results'])
-            url = response['next']
-        starship_details = []
-        for s in starships:
-            r = request_get( s['url'] )
-            response = r.json()
-            starship_details.append(response['result']['properties'])
-        df = pd.DataFrame(starship_details)
-        df.to_csv('data/starships.csv', index=False)
-        return redirect(url_for('homepage'))
-    except Exception as e:
-            return f"Error refreshing CSV: {str(e)}", 500
+    api_conn = api_connector()
+    api_conn.refresh_table()
+    return redirect(url_for('homepage'))
 
 
 @app.route('/logout')
@@ -96,8 +128,3 @@ def logout():
 
 if __name__ == '__main__':
     app.run(debug=True)
-
-
-@RateLimiter(max_calls=400, period=3600)
-def request_get( url ):
-    return requests.get(url)
