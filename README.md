@@ -15,8 +15,38 @@ Using the StarWars API (https://swapi.tech/) create a simple full-stack web appl
 - Client libraries exist for the StarWars API. We request that you do not use these libraries library to interact with the StarWars API
 - Open-source packages other than the StarWars client libraries can be used but are not required to complete this assignment.
 
-# Solution
+# Solution Overview
+## 1. Data Extraction
+Due to the Star Wars API's rate limit (5 calls every 15 minutes), data is extracted using a script and saved locally in a CSV file for faster processing and offline use.
 
-The Star Wars API provided contains a soft rate-limit of 5 calls every 15 minutes, in order to develop a webapp using the Star Wars data it is necessary to first extract the information into a more usable format, this might be stored as a relational database or a csv.
-After we extract the data using a static script, we can develop the webapp using flask since the frontend is not relevant to the challenge and localhost is acceptable.
-The app contains a login with static credentials (user: user, password: 1234).
+## 2. Web Application
+The web application is developed using Flask, chosen for its simplicity and lightweight nature. It includes the following key features:
+
+### Login: 
+- Static user credentials (user: user, password: 1234) to access the application.
+### Homepage:
+- Displays a <table> with all Starship data initially.
+- Includes a dropdown (<select>) for Starship manufacturers to filter the data.
+- When a manufacturer is selected, the table is dynamically updated to display only matching results.
+- Refresh Button: A button allows authenticated users to refresh the data by fetching the latest information from the Star Wars API and updating the local CSV.
+- Logout Button: Logs the user out, clearing their session.
+
+# How to Run the Application
+### Clone the repository:
+```
+git clone <repository-url>  
+cd <repository-folder>  
+```
+### Install dependencies:
+Make sure you have Python installed. Then install the required packages:
+```
+pip install flask pandas requests ratelimiter 
+```
+### Prepare the data:
+Run the script to fetch and save Starship data into starships.csv and perform an exploratory analysis
+### Run the application:
+```
+python app.py  
+```
+
+Access the application in your browser at http://localhost:5000.

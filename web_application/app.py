@@ -48,7 +48,7 @@ def homepage():
             df = pd.read_csv('data/starships.csv')
 
             # get list of possible manufacturers
-            manufacturers = sorted(df['manufacturer'].unique())
+            manufacturers = sorted( list(set( re.split('\. |, |/', ', '.join([man.replace('.','').replace('Incorporated','Inc') for man in df['manufacturer'].to_list()] ) ) )) )
 
             selected_manufacturer = request.form.get('manufacturer', '')
             if selected_manufacturer:
